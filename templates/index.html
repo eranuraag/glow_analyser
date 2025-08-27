@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOTA Skin Analysis System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .analysis-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        .recommendation-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .loading-spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #06b6d4, #3b82f6, #8b5cf6);
+            background-size: 300% 100%;
+            animation: gradient 2s ease infinite;
+        }
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .glass-effect {
+            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen">
+    <!-- Header -->
+    <header class="glass-effect shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-4xl font-bold text-white text-center">
+                🔬 SOTA Skin Analysis System
+            </h1>
+            <p class="text-blue-200 text-center mt-2">Advanced AI-powered dermatological assessment using state-of-the-art computer vision</p>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 py-8">
+        <!-- Camera Section -->
+        <div class="glass-effect rounded-xl shadow-xl p-6 mb-8 border border-white/20">
+            <h2 class="text-2xl font-semibold mb-4 text-white">📸 Capture Your Image</h2>
+            <div class="text-center">
+                <video id="video" width="400" height="300" autoplay class="mx-auto rounded-lg border-2 border-blue-300 mb-4 shadow-lg"></video>
+                <canvas id="canvas" width="400" height="300" style="display: none;"></canvas>
+                <div class="space-x-4">
+                    <button onclick="startCamera()" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition transform hover:scale-105 shadow-lg">
+                        🎥 Start Camera
+                    </button>
+                    <button onclick="captureImage()" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition transform hover:scale-105 shadow-lg">
+                        📷 Capture Image
+                    </button>
+                    <button onclick="analyzeImage()" class="bg-purple-500 hover:bg-purple-600 text-white px-6 py-3 rounded-lg font-medium transition transform hover:scale-105 shadow-lg">
+                        🔍 Analyze Skin
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Progress -->
+        <div id="analysisProgress" class="glass-effect rounded-xl shadow-xl p-6 mb-8 border border-white/20" style="display: none;">
+            <h3 class="text-xl font-semibold mb-4 text-white">🔄 SOTA Model Processing</h3>
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-white">Processing with advanced computer vision models...</span>
+                    <div class="loading-spinner"></div>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-3">
+                    <div id="progressBar" class="progress-bar h-3 rounded-full" style="width: 0%"></div>
+                </div>
+                <div id="currentStep" class="text-sm text-blue-200">Initializing SOTA analysis pipeline...</div>
+            </div>
+        </div>
+
+        <!-- Results Dashboard -->
+        <div id="resultsSection" style="display: none;">
+            <!-- Spectral Analysis Results -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <div class="analysis-card rounded-xl p-6 text-white shadow-xl">
+                    <h3 class="text-xl font-semibold mb-4">🔬 Spectral Analysis</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span>UV Damage Index:</span>
+                            <span id="uvDamage" class="font-bold text-yellow-300">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Melanin Level:</span>
+                            <span id="melaninLevel" class="font-bold text-amber-300">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Hemoglobin:</span>
+                            <span id="hemoglobinLevel" class="font-bold text-red-300">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Hydration Score:</span>
+                            <span id="hydrationScore" class="font-bold text-blue-300">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="metric-card rounded-xl p-6 text-white shadow-xl">
+                    <h3 class="text-xl font-semibold mb-4">📊 Skin Metrics</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span>Acne Severity:</span>
+                            <span id="acneSeverity" class="font-bold text-orange-300">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Wrinkle Score:</span>
+                            <span id="wrinkleScore" class="font-bold text-purple-300">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Pore Visibility:</span>
+                            <span id="poreVisibility" class="font-bold text-pink-300">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Overall Score:</span>
+                            <span id="overallScore" class="font-bold text-green-300 text-xl">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recommendation-card rounded-xl p-6 text-white shadow-xl">
+                    <h3 class="text-xl font-semibold mb-4">⚡ Real-time Insights</h3>
+                    <div class="space-y-3">
+                        <div class="flex justify-between">
+                            <span>Skin Type:</span>
+                            <span id="skinType" class="font-bold text-cyan-300">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Age Estimate:</span>
+                            <span id="ageEstimate" class="font-bold text-indigo-300">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Risk Level:</span>
+                            <span id="riskLevel" class="font-bold text-yellow-300">--</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Confidence:</span>
+                            <span id="confidence" class="font-bold text-emerald-300">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Analysis -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <!-- Visual Analysis -->
+                <div class="glass-effect rounded-xl shadow-xl p-6 border border-white/20">
+                    <h3 class="text-xl font-semibold mb-4 text-white">🎯 Visual Analysis</h3>
+                    <div class="space-y-4">
+                        <div class="border border-white/20 rounded-lg p-4">
+                            <img src="https://storage.googleapis.com/workspace-0f70711f-8b4e-4d94-86f1-2a93ccde5887/image/2f9dce71-49b0-438f-af1c-b79b6356911d.png" alt="Original captured image for skin analysis" id="originalImage" class="w-full rounded shadow-lg" />
+                            <p class="text-sm text-blue-200 mt-2">Original Captured Image</p>
+                        </div>
+                        <div class="border border-white/20 rounded-lg p-4">
+                            <div id="analysisVisualization" class="w-full h-64 bg-gradient-to-r from-blue-500 to-purple-500 rounded flex items-center justify-center text-white relative">
+                                <span>Analysis Visualization</span>
+                                <!-- heatmap canvas (hidden until results) -->
+                                <canvas id="heatmapCanvas" width="400" height="300" style="display: none; position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 0.5rem;"></canvas>
+                            </div>
+                             <p class="text-sm text-blue-200 mt-2">AI-Generated Analysis Heatmap</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Clinical Report -->
+                <div class="glass-effect rounded-xl shadow-xl p-6 border border-white/20">
+                    <h3 class="text-xl font-semibold mb-4 text-white">📋 Clinical Assessment</h3>
+                    <div id="clinicalReport" class="space-y-4">
+                        <div class="border-l-4 border-blue-400 pl-4 bg-blue-900/30 p-3 rounded-r">
+                            <h4 class="font-semibold text-blue-300">Primary Concerns Detected:</h4>
+                            <ul id="primaryConcerns" class="list-disc list-inside text-sm text-blue-100 mt-2">
+                                <li>Analyzing skin conditions...</li>
+                            </ul>
+                        </div>
+                        <div class="border-l-4 border-green-400 pl-4 bg-green-900/30 p-3 rounded-r">
+                            <h4 class="font-semibold text-green-300">Preventive Measures:</h4>
+                            <ul id="preventiveMeasures" class="list-disc list-inside text-sm text-green-100 mt-2">
+                                <li>Generating recommendations...</li>
+                            </ul>
+                        </div>
+                        <div class="border-l-4 border-yellow-400 pl-4 bg-yellow-900/30 p-3 rounded-r">
+                            <h4 class="font-semibold text-yellow-300">Professional Consultation:</h4>
+                            <p id="professionalAdvice" class="text-sm text-yellow-100 mt-2">Evaluating need for dermatologist consultation...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Treatment Recommendations -->
+            <div class="glass-effect rounded-xl shadow-xl p-6 mb-8 border border-white/20">
+                <h3 class="text-xl font-semibold mb-6 text-white">💊 Personalized Treatment Plan</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <!-- Morning Routine -->
+                    <div class="bg-orange-900/30 border border-orange-400/50 rounded-lg p-4">
+                        <h4 class="font-semibold text-orange-300 mb-3">🌅 Morning Routine</h4>
+                        <ul id="morningRoutine" class="space-y-2 text-sm text-orange-100">
+                            <li class="flex items-start">
+                                <span class="text-orange-400 mr-2">1.</span>
+                                <span>Gentle cleanser with ceramides</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-orange-400 mr-2">2.</span>
+                                <span>Antioxidant serum (Vitamin C)</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-orange-400 mr-2">3.</span>
+                                <span>Hyaluronic acid moisturizer</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-orange-400 mr-2">4.</span>
+                                <span>Broad-spectrum SPF 50+ sunscreen</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Evening Routine -->
+                    <div class="bg-purple-900/30 border border-purple-400/50 rounded-lg p-4">
+                        <h4 class="font-semibold text-purple-300 mb-3">🌙 Evening Routine</h4>
+                        <ul id="eveningRoutine" class="space-y-2 text-sm text-purple-100">
+                            <li class="flex items-start">
+                                <span class="text-purple-400 mr-2">1.</span>
+                                <span>Double cleansing method</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-purple-400 mr-2">2.</span>
+                                <span>Hydrating toner or essence</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-purple-400 mr-2">3.</span>
+                                <span>Treatment serum (as needed)</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-purple-400 mr-2">4.</span>
+                                <span>Rich night moisturizer</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Weekly Treatments -->
+                    <div class="bg-blue-900/30 border border-blue-400/50 rounded-lg p-4">
+                        <h4 class="font-semibold text-blue-300 mb-3">📅 Weekly Treatments</h4>
+                        <ul id="weeklyTreatments" class="space-y-2 text-sm text-blue-100">
+                            <li class="flex items-start">
+                                <span class="text-blue-400 mr-2">•</span>
+                                <span>Chemical exfoliant (AHA/BHA)</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-400 mr-2">•</span>
+                                <span>Hydrating face mask</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-400 mr-2">•</span>
+                                <span>Facial massage (5 minutes)</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-blue-400 mr-2">•</span>
+                                <span>LED light therapy (optional)</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Professional Treatments -->
+                    <div class="bg-green-900/30 border border-green-400/50 rounded-lg p-4">
+                        <h4 class="font-semibold text-green-300 mb-3">🏥 Professional Care</h4>
+                        <ul id="professionalTreatments" class="space-y-2 text-sm text-green-100">
+                            <li class="flex items-start">
+                                <span class="text-green-400 mr-2">•</span>
+                                <span>Dermatologist consultation</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-400 mr-2">•</span>
+                                <span>Professional chemical peels</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-400 mr-2">•</span>
+                                <span>Microneedling treatments</span>
+                            </li>
+                            <li class="flex items-start">
+                                <span class="text-green-400 mr-2">•</span>
+                                <span>Laser therapy evaluation</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Product Recommendations -->
+            <div class="glass-effect rounded-xl shadow-xl p-6 mb-8 border border-white/20">
+                <h3 class="text-xl font-semibold mb-6 text-white">🛍️ Recommended Products</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="productRecommendations">
+                    <!-- Products will be dynamically added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SAFETY STUB: ensure displayAnalysisResults exists to avoid "not defined" errors ---
+        // This stub will be overwritten by the real function when it is defined later in this file.
+        window.displayAnalysisResults = window.displayAnalysisResults || function(results) {
+            console.warn('displayAnalysisResults called before initialization.', results);
+            try {
+                // minimal safe UI update if basic elements exist
+                const sec = document.getElementById('resultsSection');
+                if (sec) sec.style.display = 'block';
+                if (results && typeof results === 'object') {
+                    const uvEl = document.getElementById('uvDamage');
+                    if (uvEl && results.uvDamage !== undefined) uvEl.textContent = (results.uvDamage ?? '--') + '%';
+                }
+            } catch (err) { console.error('stub displayAnalysisResults error', err); }
+        };
+        
+        let stream = null;
+        let capturedImageData = null;
+
+        // SOTA Model Simulation
+        const sotaModels = {
+            faceDetection: 'MediaPipe Face Detection',
+            skinAnalysis: 'Advanced Computer Vision Pipeline',
+            spectralAnalysis: 'Multi-Channel Color Analysis',
+            recommendationEngine: 'AI-Powered Clinical Recommendations'
+        };
+
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: 400, 
+                        height: 300,
+                        facingMode: 'user'
+                    } 
+                });
+                document.getElementById('video').srcObject = stream;
+                console.log('✅ Camera started successfully');
+            } catch (err) {
+                alert('Camera access denied. Please allow camera permissions and try again.');
+                console.error('Error accessing camera:', err);
+            }
+        }
+
+        function captureImage() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (video.videoWidth === 0) {
+                alert('Please start the camera first!');
+                return;
+            }
+            
+            ctx.drawImage(video, 0, 0, 400, 300);
+            capturedImageData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            // Display captured image
+            document.getElementById('originalImage').src = capturedImageData;
+            
+            // Stop camera stream
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            
+            alert('Image captured successfully! Click "Analyze Skin" to process.');
+            console.log('✅ Image captured and camera stopped');
+        }
+
+        async function analyzeImage() {
+            if (!capturedImageData) {
+                alert('Please capture an image first!');
+                return;
+            }
+
+            // Show progress
+            document.getElementById('analysisProgress').style.display = 'block';
+            
+            try {
+                // Simulate SOTA model processing
+                await simulateSOTAAnalysis();
+                
+                // Send to backend for actual analysis
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image: capturedImageData
+                    })
+                });
+                
+                const results = await response.json();
+                
+                if (results.error) {
+                    throw new Error(results.error);
+                }
+                
+                // Display results
+                displayAnalysisResults(results);
+                
+            } catch (error) {
+                console.error('Analysis error:', error);
+                alert('Analysis failed: ' + error.message);
+            } finally {
+                // Hide progress and show results
+                document.getElementById('analysisProgress').style.display = 'none';
+                document.getElementById('resultsSection').style.display = 'block';
+                
+                // Scroll to results
+                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        async function simulateSOTAAnalysis() {
+            const steps = [
+                'Loading MediaPipe Face Detection Model...',
+                'Detecting facial landmarks and boundaries...',
+                'Initializing computer vision pipeline...',
+                'Running advanced color space analysis...',
+                'Analyzing UV damage patterns...',
+                'Evaluating melanin distribution...',
+                'Computing skin texture and hydration metrics...',
+                'Detecting skin conditions and concerns...',
+                'Generating personalized recommendations...',
+                'Finalizing comprehensive analysis...'
+            ];
+
+            for (let i = 0; i < steps.length; i++) {
+                document.getElementById('currentStep').textContent = steps[i];
+                document.getElementById('progressBar').style.width = `${((i + 1) / steps.length) * 100}%`;
+                await new Promise(resolve => setTimeout(resolve, 600));
+            }
+        }
+
+        // Enhanced product details modal
+        function showProductDetails(productId) {
+            const products = window.currentAnalysisResults?.recommended_products || [];
+            let product = products.find(p => String(p.id) === String(productId));
+            if (!product) {
+                // fallback: try match by generated id or by name
+                product = products.find(p => String(p.name) === String(productId) || String(p._uid) === String(productId));
+            }
+            
+            if (!product) {
+                showNotification('Product details not found', 'error');
+                return;
+            }
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4';
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-modal', 'true');
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-auto">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-semibold text-gray-800">${product.name}</h3>
+                        <button id="modalCloseBtn" class="text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <img src="${product.image_url || 'https://placehold.co/600x400'}" alt="${product.name}" class="w-full h-48 object-cover rounded" />
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">Why This Product?</h4>
+                            <p class="text-sm text-gray-600">${product.explanation || 'Recommended for your skin concerns.'}</p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">Full Ingredients</h4>
+                            <p class="text-sm text-gray-600">${product.ingredients || 'N/A'}</p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">How to Use</h4>
+                            <p class="text-sm text-gray-600">${product.usage || 'Follow product label instructions.'}</p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">Key Benefits</h4>
+                            <ul class="text-sm text-gray-600 list-disc list-inside">
+                                ${(Array.isArray(product.key_benefits) ? product.key_benefits : []).map(benefit => `<li>${benefit}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="flex space-x-2">
+                            <a href="https://www.amazon.com/s?k=${encodeURIComponent(product.search_query || product.name || '')}" target="_blank" rel="noopener noreferrer"
+                               class="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-center py-2 px-4 rounded transition-colors">
+                                🛒 Search on Amazon
+                            </a>
+                            <button id="modalCopyBtn" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-colors">
+                                📋 Copy Name
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // close handlers
+            modal.addEventListener('click', (e) => {
+                // close when clicking the overlay (not the dialog)
+                if (e.target === modal) modal.remove();
+            });
+            // attach to close button and copy button after append
+            document.body.appendChild(modal);
+            const closeBtn = document.getElementById('modalCloseBtn');
+            if (closeBtn) closeBtn.addEventListener('click', () => modal.remove());
+            const copyBtn = document.getElementById('modalCopyBtn');
+            if (copyBtn) copyBtn.addEventListener('click', () => copyProductName(product.name));
+        }
+
+        function generateProductRecommendations(results) {
+            const products = Array.isArray(results?.recommended_products) ? results.recommended_products : [];
+            const container = document.getElementById('productRecommendations');
+            if (!container) return;
+    
+            // Keep latest results globally
+            window.currentAnalysisResults = results || {};
+    
+            if (products.length === 0) {
+                container.innerHTML =
+                    '<p class="text-white col-span-4">No specific recommendations available.</p>';
+                return;
+            }
+    
+            container.innerHTML = products.map(product => {
+                // Defensive defaults
+                const image = product?.image_url || product?.image || 'https://placehold.co/150x150';
+                const name = product?.name || 'Recommended Product';
+                const id = (product?.id !== undefined && product?.id !== null) ? product.id : `uid_${Math.random().toString(36).slice(2,9)}`;
+                const brand = product?.brand || '';
+                const category = product?.category || '';
+                const rawScore = product?.recommendation_score;
+                const score = (rawScore === undefined || rawScore === null || Number.isNaN(Number(rawScore))) ? null : Number(rawScore);
+                const explanation = product?.explanation || 'Recommended for your skin type';
+                const benefits = Array.isArray(product?.key_benefits) ? product.key_benefits : [];
+                const price = (product?.price !== undefined && product?.price !== null) ? product.price : 'N/A';
+                const rating = (product?.rating !== undefined && product?.rating !== null) ? product.rating : '—';
+                const reviews = product?.reviews || 0;
+                const searchQuery = (product?.search_query || `${name} ${brand}`).trim();
+                const amazonBase = (product?.amazon_link && String(product.amazon_link).startsWith('http')) ? product.amazon_link : 'https://www.amazon.com/';
+                const amazonSearchUrl = `${amazonBase}${amazonBase.includes('?') ? '&' : '?'}k=${encodeURIComponent(searchQuery)}&ref=skinanalysis`;
+                const ingredientsPreview = (product?.ingredients || '').split(',').slice(0, 3).map(s => s.trim()).filter(Boolean).join(', ') || 'N/A';
+    
+                return `
+                    <div class="bg-white/10 border border-white/20 rounded-lg p-4 text-center backdrop-blur hover:bg-white/20 transition-all">
+                        <img src="${image}" alt="${name} - ${category} for skincare routine" class="w-full h-32 object-cover rounded mb-2" />
+                        <h5 class="font-semibold text-sm mb-1 text-white">${name}</h5>
+                        <p class="text-xs text-blue-200 mb-2">${brand}${brand && category ? ' • ' : ''}${category}</p>
+                        
+                        <!-- Match Score -->
+                        <div class="mb-2">
+                            <span class="text-xs bg-green-500/30 px-2 py-1 rounded text-green-200">
+                                ⭐ Match Score: ${score === null ? 'N/A' : score.toFixed(1)}
+                            </span>
+                        </div>
+                        
+                        <!-- Why Recommended -->
+                        <div class="mb-2 bg-yellow-500/20 rounded p-2">
+                            <p class="text-xs text-yellow-200 italic">"${escapeHtml(explanation)}"</p>
+                        </div>
+                        
+                        <!-- Key Ingredients -->
+                        <div class="mb-3">
+                            <p class="text-xs text-green-300 font-medium">Key Ingredients:</p>
+                            <p class="text-xs text-green-200">${escapeHtml(ingredientsPreview)}</p>
+                        </div>
+                        
+                        <!-- Benefits -->
+                        <div class="mb-3">
+                            <div class="flex flex-wrap gap-1 justify-center">
+                                ${benefits.slice(0, 2).map(benefit => 
+                                    `<span class="text-xs bg-blue-500/30 px-2 py-1 rounded text-blue-200">${escapeHtml(benefit)}</span>`
+                                ).join('')}
+                            </div>
+                        </div>
+                        
+                        <!-- Price and Rating -->
+                        <div class="flex justify-between items-center mb-3 text-xs">
+                            <span class="text-green-300 font-semibold">${price === 'N/A' ? price : '$' + price}</span>
+                            <span class="text-yellow-300">⭐ ${escapeHtml(String(rating))} (${escapeHtml(String(reviews))})</span>
+                        </div>
+                        
+                        <!-- Enhanced Purchase Options -->
+                        <div class="space-y-2">
+                            <a href="${amazonSearchUrl}" target="_blank" rel="noopener noreferrer"
+                               class="block w-full bg-orange-500 hover:bg-orange-600 text-white text-xs font-medium py-2 px-3 rounded text-center transition-colors">
+                                🛒 Find on Amazon
+                            </a>
+                            <div class="flex space-x-1">
+                                <button onclick="copyProductName(${JSON.stringify(name)})" 
+                                        class="flex-1 bg-blue-500/30 hover:bg-blue-500/50 text-blue-200 text-xs py-1 px-2 rounded transition-colors">
+                                    📋 Copy
+                                </button>
+                                <button onclick="showProductDetails(${JSON.stringify(id)})" 
+                                        class="flex-1 bg-purple-500/30 hover:bg-purple-500/50 text-purple-200 text-xs py-1 px-2 rounded transition-colors">
+                                    ℹ️ Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    
+        // Simple HTML-escape helper to avoid injecting raw strings into templates
+        function escapeHtml(str) {
+            if (str === undefined || str === null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+    
+        // Enhanced product details modal (defensive)
+        function showProductDetails(productId) {
+            const products = window.currentAnalysisResults?.recommended_products || [];
+            let product = products.find(p => String(p.id) === String(productId));
+            if (!product) {
+                // fallback: try match by generated id or by name
+                product = products.find(p => String(p.name) === String(productId) || String(p._uid) === String(productId));
+            }
+            
+            if (!product) {
+                showNotification('Product details not found', 'error');
+                return;
+            }
+            
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4';
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-modal', 'true');
+    
+            const safeBenefits = Array.isArray(product.key_benefits) ? product.key_benefits : [];
+            const safeIngredients = escapeHtml(product.ingredients || 'N/A');
+            const safeExplanation = escapeHtml(product.explanation || 'Recommended for your skin concerns.');
+            const safeUsage = escapeHtml(product.usage || 'Follow product label instructions.');
+            const searchQuery = encodeURIComponent(product.search_query || product.name || '');
+    
+            modal.innerHTML = `
+                <div class="bg-white rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-auto">
+                    <div class="flex justify-between items-start mb-4">
+                        <h3 class="text-xl font-semibold text-gray-800">${escapeHtml(product.name)}</h3>
+                        <button class="modal-close text-gray-500 hover:text-gray-700 text-2xl leading-none">&times;</button>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <img src="${product.image_url || 'https://placehold.co/600x400'}" alt="${escapeHtml(product.name)}" class="w-full h-48 object-cover rounded" />
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">Why This Product?</h4>
+                            <p class="text-sm text-gray-600">${safeExplanation}</p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">Full Ingredients</h4>
+                            <p class="text-sm text-gray-600">${safeIngredients}</p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">How to Use</h4>
+                            <p class="text-sm text-gray-600">${safeUsage}</p>
+                        </div>
+                        
+                        <div>
+                            <h4 class="font-semibold text-gray-700 mb-2">Key Benefits</h4>
+                            <ul class="text-sm text-gray-600 list-disc list-inside">
+                                ${(safeBenefits).map(benefit => `<li>${escapeHtml(benefit)}</li>`).join('')}
+                            </ul>
+                        </div>
+                        
+                        <div class="flex space-x-2">
+                            <a href="https://www.amazon.com/s?k=${searchQuery}" target="_blank" rel="noopener noreferrer"
+                               class="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-center py-2 px-4 rounded transition-colors">
+                                🛒 Search on Amazon
+                            </a>
+                            <button class="modal-copy bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-colors">
+                                📋 Copy Name
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // close handlers
+            modal.addEventListener('click', (e) => {
+                // close when clicking the overlay (not the dialog)
+                if (e.target === modal) modal.remove();
+            });
+            document.body.appendChild(modal);
+    
+            const closeBtn = modal.querySelector('.modal-close');
+            if (closeBtn) closeBtn.addEventListener('click', () => modal.remove());
+            const copyBtn = modal.querySelector('.modal-copy');
+            if (copyBtn) copyBtn.addEventListener('click', () => copyProductName(product.name));
+        }
+    
+        // Store analysis results globally for access in other functions
+        function displayAnalysisResults(results) {
+            // Ensure results object
+            results = results || {};
+            window.currentAnalysisResults = results;
+    
+            // Safe element updater
+            const setText = (id, value, suffix = '') => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                el.textContent = (value === undefined || value === null) ? '--' : `${value}${suffix}`;
+            };
+    
+            setText('uvDamage', results.uvDamage, results.uvDamage !== undefined && results.uvDamage !== null ? '%' : '');
+            setText('melaninLevel', results.melaninLevel, results.melaninLevel !== undefined && results.melaninLevel !== null ? '%' : '');
+            setText('hemoglobinLevel', results.hemoglobinLevel, results.hemoglobinLevel !== undefined && results.hemoglobinLevel !== null ? '%' : '');
+            setText('hydrationScore', results.hydrationScore, results.hydrationScore !== undefined && results.hydrationScore !== null ? '%' : '');
+            setText('acneSeverity', results.acneSeverity);
+            setText('wrinkleScore', results.wrinkleScore, results.wrinkleScore !== undefined && results.wrinkleScore !== null ? '%' : '');
+            setText('poreVisibility', results.poreVisibility);
+            setText('overallScore', results.overallScore, results.overallScore !== undefined && results.overallScore !== null ? '/100' : '');
+            setText('skinType', results.skinType);
+            setText('ageEstimate', results.ageEstimate, results.ageEstimate ? ' years' : '');
+            setText('riskLevel', results.riskLevel);
+            setText('confidence', results.confidence, results.confidence !== undefined && results.confidence !== null ? '%' : '');
+    
+            // Update clinical report and routines if those functions exist
+            if (typeof updateClinicalReport === 'function') updateClinicalReport(results);
+            if (typeof updateRecommendations === 'function') updateRecommendations(results.recommendations || {});
+    
+            // Generate product recommendations
+            try {
+                generateProductRecommendations(results);
+            } catch (err) {
+                console.error('generateProductRecommendations error:', err);
+                // show fallback content
+                const container = document.getElementById('productRecommendations');
+                if (container) container.innerHTML = '<p class="text-white">Unable to display product recommendations.</p>';
+            }
+    
+            // Show heatmap if available (debug + render)
+            try { if (typeof showHeatMap === 'function') showHeatMap(results); } catch (err) { console.error('showHeatMap error:', err); }
+    
+            // Reveal results section
+            const resultsSection = document.getElementById('resultsSection');
+            if (resultsSection) resultsSection.style.display = 'block';
+    
+            console.log('✅ Analysis results displayed with Amazon recommendations');
+        }
+    </script>
+</body>
+</html>
